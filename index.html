@@ -44,40 +44,28 @@
   © 2026 - Mit ästhetischen Vibes erstellt ☕
 </footer>
 
-<script>
-  console.log("[DEBUG] Script geladen");
+<script type="module">
+  console.log("[DEBUG] Firebase Script geladen");
 
-  let posts = JSON.parse(localStorage.getItem("posts")) || [];
-  console.log("[DEBUG] Geladene Beiträge:", posts);
+  import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  function savePosts() {
-    localStorage.setItem("posts", JSON.stringify(posts));
-    console.log("[DEBUG] Beiträge gespeichert:", posts);
-  }
+  // ✅ CONFIG KAMU (SUDAH BENAR)
+  const firebaseConfig = {
+    apiKey: "AIzaSyDjZ3DwJrOE2CBaWr2MkxyJ90MMo1sm3jk",
+    authDomain: "fadli-blog.firebaseapp.com",
+    projectId: "fadli-blog",
+    storageBucket: "fadli-blog.firebasestorage.app",
+    messagingSenderId: "1080969131334",
+    appId: "1:1080969131334:web:2ad03ee8c8f240fe62e147",
+    measurementId: "G-XJ6QYG77XY"
+  };
 
-  function renderPosts() {
-    const container = document.getElementById("posts");
-    container.innerHTML = "";
+  const app = initializeApp(firebaseConfig);
+  const db = getFirestore(app);
 
-    posts.forEach((p, index) => {
-      const post = document.createElement("div");
-      post.classList.add("post");
-
-      post.innerHTML = `
-        <h2>${p.title}</h2>
-        <div class="date">${p.date}</div>
-        <p>${p.content}</p>
-        <button onclick="deletePost(${index})">Löschen</button>
-      `;
-
-      container.appendChild(post);
-    });
-
-    console.log("[DEBUG] Beiträge gerendert");
-  }
-
-  function addPost() {
-    console.log("[DEBUG] addPost ausgelöst");
+  async function addPost() {
+    console.log("[DEBUG] addPost dipanggil");
 
     const title = document.getElementById("title").value;
     const content = document.getElementById("content").value;
@@ -87,31 +75,55 @@
       return;
     }
 
-    const newPost = {
+    await addDoc(collection(db, "posts"), {
       title,
       content,
       date: new Date().toLocaleDateString()
-    };
+    });
 
-    posts.unshift(newPost);
-    console.log("[DEBUG] Neuer Beitrag:", newPost);
-
-    savePosts();
-    renderPosts();
+    console.log("[DEBUG] Post tersimpan di Firebase");
 
     document.getElementById("title").value = "";
     document.getElementById("content").value = "";
+
+    loadPosts();
   }
 
-  function deletePost(index) {
-    console.log("[DEBUG] Lösche Beitrag Index:", index);
+  async function loadPosts() {
+    console.log("[DEBUG] loadPosts dipanggil");
 
-    posts.splice(index, 1);
-    savePosts();
-    renderPosts();
+    const container = document.getElementById("posts");
+    container.innerHTML = "";
+
+    const querySnapshot = await getDocs(collection(db, "posts"));
+
+    querySnapshot.forEach((docData) => {
+      const data = docData.data();
+
+      const post = document.createElement("div");
+      post.classList.add("post");
+
+      post.innerHTML = `
+        <h2>${data.title}</h2>
+        <div class="date">${data.date}</div>
+        <p>${data.content}</p>
+        <button onclick="deletePost('${docData.id}')">Löschen</button>
+      `;
+
+      container.appendChild(post);
+    });
+
+    console.log("[DEBUG] Posts geladen");
   }
 
-  renderPosts();
+  async function deletePost(id) {
+    console.log("[DEBUG] Hapus post:", id);
+
+    await deleteDoc(doc(db, "posts", id));
+    loadPosts();
+  }
+
+  loadPosts();
 </script>
 
 </body>
