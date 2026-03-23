@@ -32,10 +32,6 @@
 
 <div class="container">
 
-  <!-- 🔐 LOGIN BUTTON -->
-  <button onclick="login()">Login</button>
-  <button onclick="logout()">Logout</button>
-
   <input type="text" id="title" placeholder="Titel des Beitrags...">
   <textarea id="content" placeholder="Schreibe hier etwas..."></textarea>
   <button onclick="addPost()">Veröffentlichen</button>
@@ -51,8 +47,6 @@
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
-  import { getAuth, signInWithPopup, GoogleAuthProvider, signOut, onAuthStateChanged } 
-  from "https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDjZ3DwJrOE2CBaWr2MkxyJ90MMo1sm3jk",
@@ -67,38 +61,8 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  // 🔐 AUTH
-  const auth = getAuth();
-  const provider = new GoogleAuthProvider();
-  let currentUser = null;
-
-  const ADMIN_EMAIL = "fadlisahwa.deutschland@gmail.com";
-
-  window.login = async function() {
-    const result = await signInWithPopup(auth, provider);
-    currentUser = result.user;
-  }
-
-  window.logout = async function() {
-    await signOut(auth);
-    currentUser = null;
-  }
-
-  onAuthStateChanged(auth, (user) => {
-    currentUser = user;
-    if (user) {
-      console.log("Login sebagai:", user.email);
-    }
-  });
-
-  // 🔒 POST PROTECTION
+  // ✅ FIX: buat global
   window.addPost = async function() {
-
-    if (!currentUser || currentUser.email !== ADMIN_EMAIL) {
-      alert("Nur du kannst schreiben!");
-      return;
-    }
-
     const title = document.getElementById("title").value;
     const content = document.getElementById("content").value;
 
@@ -142,12 +106,8 @@
     });
   }
 
+  // ✅ FIX: buat global
   window.deletePost = async function(id) {
-    if (!currentUser || currentUser.email !== ADMIN_EMAIL) {
-      alert("Keine Berechtigung!");
-      return;
-    }
-
     await deleteDoc(doc(db, "posts", id));
     loadPosts();
   }
