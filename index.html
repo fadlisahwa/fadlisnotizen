@@ -8,77 +8,95 @@
   <link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;700&family=Poppins:wght@300;400&display=swap" rel="stylesheet">
 
   <style>
-    body { margin: 0; font-family: 'Poppins', sans-serif; background: #f5f3ef; color: #333; }
+    body { margin: 0; font-family: 'Poppins', sans-serif; background: #121212; color: #e0e0e0; }
     header { text-align: center; padding: 60px 20px; font-family: 'Playfair Display', serif; }
-    header h1 { font-size: 42px; margin: 0; }
-    header p { color: #777; margin-top: 10px; }
+    header h1 { font-size: 42px; margin: 0; color: #fff; }
+    header p { color: #aaa; }
+
     .container { max-width: 800px; margin: auto; padding: 20px; }
-    .post { background: white; padding: 25px; margin-bottom: 25px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.05); transition: 0.3s; }
+
+    .post { background: #1e1e1e; padding: 25px; margin-bottom: 25px; border-radius: 12px; box-shadow: 0 5px 15px rgba(0,0,0,0.5); transition: 0.3s; }
     .post:hover { transform: translateY(-5px); }
-    .post h2 { font-family: 'Playfair Display', serif; margin-bottom: 10px; }
-    .date { font-size: 12px; color: #aaa; margin-bottom: 15px; }
-    footer { text-align: center; padding: 40px 20px; color: #888; }
-    button { display: block; margin: 10px 0; padding: 10px 16px; border: none; background: black; color: white; border-radius: 8px; cursor: pointer; }
-    textarea { width: 100%; height: 120px; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 10px; font-family: 'Poppins'; }
-    input { width: 100%; padding: 10px; border-radius: 8px; border: 1px solid #ccc; margin-bottom: 10px; }
+
+    .post img { width: 100%; border-radius: 10px; margin-top: 10px; }
+
+    .post h2 { font-family: 'Playfair Display', serif; color: #fff; }
+    .date { font-size: 12px; color: #888; }
+
+    footer { text-align: center; padding: 40px 20px; color: #666; }
+
+    button { margin: 5px; padding: 10px 16px; border: none; background: #333; color: white; border-radius: 8px; cursor: pointer; }
+    button:hover { background: #555; }
+
+    textarea, input {
+      width: 100%; padding: 10px; border-radius: 8px;
+      border: 1px solid #333; margin-bottom: 10px;
+      background: #1e1e1e; color: #fff;
+    }
+
+    .comment { font-size: 14px; background: #2a2a2a; padding: 8px; border-radius: 6px; margin-top: 5px; }
   </style>
 </head>
 <body>
 
 <header>
   <h1>Fadlis Notizen</h1>
-  <p>Ein Ort für meine Gedanken und Geschichten ✨</p>
+  <p>Upgrade Version 🚀</p>
 </header>
 
 <div class="container">
 
-  <input type="text" id="title" placeholder="Titel des Beitrags...">
-  <textarea id="content" placeholder="Schreibe hier etwas..."></textarea>
-  <button onclick="addPost()">Veröffentlichen</button>
+  <input type="text" id="title" placeholder="Titel...">
+  <textarea id="content" placeholder="Isi..."></textarea>
+  <input type="file" id="image">
+
+  <button onclick="addPost()">Post</button>
 
   <div id="posts"></div>
 
 </div>
 
 <footer>
-  © 2026 - Mit ästhetischen Vibes erstellt ☕
+  © 2026 Advanced Blog
 </footer>
 
 <script type="module">
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
-  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc, updateDoc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
+  import { getStorage, ref, uploadBytes, getDownloadURL } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-storage.js";
 
   const firebaseConfig = {
     apiKey: "AIzaSyDjZ3DwJrOE2CBaWr2MkxyJ90MMo1sm3jk",
     authDomain: "fadli-blog.firebaseapp.com",
     projectId: "fadli-blog",
-    storageBucket: "fadli-blog.firebasestorage.app",
+    storageBucket: "fadli-blog.appspot.com",
     messagingSenderId: "1080969131334",
-    appId: "1:1080969131334:web:2ad03ee8c8f240fe62e147",
-    measurementId: "G-XJ6QYG77XY"
+    appId: "1:1080969131334:web:2ad03ee8c8f240fe62e147"
   };
 
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
+  const storage = getStorage(app);
 
-  // ✅ FIX: buat global
   window.addPost = async function() {
     const title = document.getElementById("title").value;
     const content = document.getElementById("content").value;
+    const file = document.getElementById("image").files[0];
 
-    if (!title || !content) {
-      alert("Bitte zuerst ausfüllen!");
-      return;
+    let imageUrl = "";
+
+    if (file) {
+      const storageRef = ref(storage, 'images/' + Date.now());
+      await uploadBytes(storageRef, file);
+      imageUrl = await getDownloadURL(storageRef);
     }
 
     await addDoc(collection(db, "posts"), {
       title,
       content,
+      imageUrl,
       date: new Date().toLocaleDateString()
     });
-
-    document.getElementById("title").value = "";
-    document.getElementById("content").value = "";
 
     loadPosts();
   }
@@ -89,27 +107,66 @@
 
     const querySnapshot = await getDocs(collection(db, "posts"));
 
-    querySnapshot.forEach((docData) => {
+    for (const docData of querySnapshot.docs) {
       const data = docData.data();
 
       const post = document.createElement("div");
       post.classList.add("post");
 
       post.innerHTML = `
-        <h2>${data.title}</h2>
-        <div class="date">${data.date}</div>
-        <p>${data.content}</p>
-        <button onclick="deletePost('${docData.id}')">Löschen</button>
+        <h2 contenteditable="true" onblur="editPost('${docData.id}', this.innerText, 'title')">${data.title}</h2>
+        <p contenteditable="true" onblur="editPost('${docData.id}', this.innerText, 'content')">${data.content}</p>
+        ${data.imageUrl ? `<img src="${data.imageUrl}">` : ""}
+        <button onclick="deletePost('${docData.id}')">Hapus</button>
+
+        <input placeholder="Komentar..." id="c-${docData.id}">
+        <button onclick="addComment('${docData.id}')">Kirim</button>
+        <div id="comments-${docData.id}"></div>
       `;
 
       container.appendChild(post);
-    });
+      loadComments(docData.id);
+    }
   }
 
-  // ✅ FIX: buat global
+  window.editPost = async function(id, value, field) {
+    const refDoc = doc(db, "posts", id);
+    await updateDoc(refDoc, { [field]: value });
+  }
+
   window.deletePost = async function(id) {
     await deleteDoc(doc(db, "posts", id));
     loadPosts();
+  }
+
+  window.addComment = async function(postId) {
+    const input = document.getElementById(`c-${postId}`);
+
+    await addDoc(collection(db, "comments"), {
+      postId,
+      text: input.value,
+      date: new Date().toLocaleString()
+    });
+
+    input.value = "";
+    loadComments(postId);
+  }
+
+  async function loadComments(postId) {
+    const container = document.getElementById(`comments-${postId}`);
+    container.innerHTML = "";
+
+    const querySnapshot = await getDocs(collection(db, "comments"));
+
+    querySnapshot.forEach(docData => {
+      const data = docData.data();
+      if (data.postId === postId) {
+        const div = document.createElement("div");
+        div.classList.add("comment");
+        div.innerText = data.text;
+        container.appendChild(div);
+      }
+    });
   }
 
   loadPosts();
