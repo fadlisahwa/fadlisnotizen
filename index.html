@@ -45,12 +45,9 @@
 </footer>
 
 <script type="module">
-  console.log("[DEBUG] Firebase Script geladen");
-
   import { initializeApp } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js";
   import { getFirestore, collection, addDoc, getDocs, deleteDoc, doc } from "https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js";
 
-  // ✅ CONFIG KAMU (SUDAH BENAR)
   const firebaseConfig = {
     apiKey: "AIzaSyDjZ3DwJrOE2CBaWr2MkxyJ90MMo1sm3jk",
     authDomain: "fadli-blog.firebaseapp.com",
@@ -64,9 +61,8 @@
   const app = initializeApp(firebaseConfig);
   const db = getFirestore(app);
 
-  async function addPost() {
-    console.log("[DEBUG] addPost dipanggil");
-
+  // ✅ FIX: buat global
+  window.addPost = async function() {
     const title = document.getElementById("title").value;
     const content = document.getElementById("content").value;
 
@@ -81,8 +77,6 @@
       date: new Date().toLocaleDateString()
     });
 
-    console.log("[DEBUG] Post tersimpan di Firebase");
-
     document.getElementById("title").value = "";
     document.getElementById("content").value = "";
 
@@ -90,8 +84,6 @@
   }
 
   async function loadPosts() {
-    console.log("[DEBUG] loadPosts dipanggil");
-
     const container = document.getElementById("posts");
     container.innerHTML = "";
 
@@ -112,13 +104,10 @@
 
       container.appendChild(post);
     });
-
-    console.log("[DEBUG] Posts geladen");
   }
 
-  async function deletePost(id) {
-    console.log("[DEBUG] Hapus post:", id);
-
+  // ✅ FIX: buat global
+  window.deletePost = async function(id) {
     await deleteDoc(doc(db, "posts", id));
     loadPosts();
   }
